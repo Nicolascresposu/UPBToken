@@ -272,20 +272,20 @@ def api_purchase_detail(request, pk):
         return JsonResponse({"error": "Not authorized for this purchase"}, status=403)
 
     data = {
-        "id": purchase.id,
+        "id": purchase.pk,  # <--- changed
         "buyer": {
-            "id": purchase.user.id,
+            "id": purchase.user.pk,  # <--- changed
             "username": purchase.user.username,
         },
         "product": {
-            "id": purchase.product.id,
+            "id": purchase.product.pk,  # <--- changed
             "name": purchase.product.name,
         },
         "quantity": purchase.quantity,
         "total_tokens": purchase.total_tokens,
         "created_at": purchase.created_at.isoformat(),
         "vendor": {
-            "id": api_key.vendor.id,
+            "id": api_key.vendor.pk,  # <--- changed
             "username": api_key.vendor.username,
         },
     }
@@ -299,20 +299,35 @@ def api_transfer_tokens(request):
     if not api_key:
         return JsonResponse({"error": "Invalid or missing API key"}, status=401)
 
-    # Read JSON or form data
-    try:
-        if request.content_type == "application/json":
-            payload = json.loads(request.body.decode() or "{}")
-        else:
-            payload = request.POST
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON body"}, status=400)
+    # --- Parse body: try JSON, then form-encoded ---
+    payload = {}
+
+    if request.body:
+        raw_text = request.body.decode("utf-8", errors="replace")
+        try:
+            # Try JSON first
+            payload = json.loads(raw_text)
+        except json.JSONDecodeError:
+            # Fall back to form data (curl -d "a=1&b=2")
+            if request.POST:
+                payload = request.POST
+            else:
+                # Last resort: show what we actually received to help debugging
+                return JsonResponse(
+                    {
+                        "error": "Invalid body; expected JSON or form data",
+                        "raw_body": raw_text,
+                    },
+                    status=400,
+                )
+    else:
+        # No raw body, maybe standard form POST
+        payload = request.POST or {}
 
     recipient_username = payload.get("recipient_username")
     amount = payload.get("amount_tokens")
     description = payload.get("description", "")
 
-    # Validation
     if not recipient_username:
         return JsonResponse({"error": "recipient_username is required"}, status=400)
     if amount is None:
@@ -320,7 +335,7 @@ def api_transfer_tokens(request):
 
     try:
         amount = int(amount)
-    except ValueError:
+    except (TypeError, ValueError):
         return JsonResponse({"error": "amount_tokens must be an integer"}, status=400)
 
     if amount <= 0:
@@ -337,7 +352,6 @@ def api_transfer_tokens(request):
     if from_user == to_user:
         return JsonResponse({"error": "Cannot transfer tokens to self"}, status=400)
 
-    # Lock both accounts for safe update
     from_account = UserTokenAccount.objects.select_for_update().get(user=from_user)
     to_account = UserTokenAccount.objects.select_for_update().get(user=to_user)
 
@@ -346,7 +360,6 @@ def api_transfer_tokens(request):
 
     from_account.token_balance = F("token_balance") - amount
     to_account.token_balance = F("token_balance") + amount
-
     from_account.save()
     to_account.save()
 
@@ -358,13 +371,12 @@ def api_transfer_tokens(request):
         api_key=api_key,
     )
 
-    # Refresh to get updated numeric values (because we used F expressions)
     from_account.refresh_from_db()
     to_account.refresh_from_db()
 
     data = {
         "status": "ok",
-        "transfer_id": transfer.id,
+        "transfer_id": transfer.pk,
         "from_user": {
             "username": from_user.username,
             "new_balance": from_account.token_balance,
