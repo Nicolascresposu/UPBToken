@@ -1,7 +1,9 @@
+import secrets
 from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
 
 
 class Product(models.Model):
@@ -42,6 +44,7 @@ class Purchase(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     total_tokens = models.PositiveIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
+    
 
     def __str__(self):
         return f"{self.user.username} bought {self.quantity} x {self.product.name}"
@@ -79,7 +82,6 @@ class VendorAPIKey(models.Model):
     def __str__(self):
         return f"{self.vendor.username} - {self.name}"
     
-
 class TokenTransfer(models.Model):
     from_user = models.ForeignKey(
         User,
@@ -105,4 +107,22 @@ class TokenTransfer(models.Model):
     def __str__(self):
         return f"{self.from_user.username} → {self.to_user.username}: {self.amount_tokens} UPBT"
     
-    
+
+class VendorWebhook(models.Model):
+    vendor = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="webhooks",
+    )
+    url = models.URLField()
+    secret = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Optional secret used to sign webhook payloads.",
+    )
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Webhook for {self.vendor.username} -> {self.url}"

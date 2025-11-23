@@ -1,5 +1,13 @@
 from django.contrib import admin
-from .models import Product, UserTokenAccount, Purchase, TokenTopUp, VendorAPIKey, TokenTransfer
+from .models import (
+    Product,
+    UserTokenAccount,
+    Purchase,
+    TokenTopUp,
+    VendorAPIKey,
+    TokenTransfer,
+    VendorWebhook,
+)
 
 
 @admin.register(Product)
@@ -39,3 +47,10 @@ class TokenTransferAdmin(admin.ModelAdmin):
     list_display = ("from_user", "to_user", "amount_tokens", "created_at", "api_key")
     list_filter = ("created_at",)
     search_fields = ("from_user__username", "to_user__username")
+
+
+@admin.register(VendorWebhook)
+class VendorWebhookAdmin(admin.ModelAdmin):
+    list_display = ("vendor", "url", "is_active", "created_at")
+    list_filter = ("is_active", "created_at")
+    search_fields = ("vendor__username", "url")

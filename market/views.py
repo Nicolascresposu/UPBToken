@@ -9,9 +9,20 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 import json
+import hmac
+import hashlib
+import requests
 
 from .forms import SignUpForm, ProductForm, BuyTokensForm
-from .models import Product, Purchase, UserTokenAccount, TokenTopUp, VendorAPIKey, TokenTransfer
+from .models import (
+    Product,
+    Purchase,
+    UserTokenAccount,
+    TokenTopUp,
+    VendorAPIKey,
+    TokenTransfer,
+    VendorWebhook,
+)
 
 
 def home(request):
@@ -117,12 +128,15 @@ def buy_product(request, pk):
         vendor_account.save()
 
     # 3) Register purchase
-    Purchase.objects.create(
+    purchase = Purchase.objects.create(
         user=request.user,
         product=product,
         quantity=quantity,
         total_tokens=total_cost,
     )
+
+    # 🔔 Send webhooks (non-blocking-ish, but inside same request)
+    send_purchase_webhooks(purchase)
 
     messages.success(
         request,
@@ -403,3 +417,86 @@ def vendor_api_keys(request):
         return redirect("vendor_api_keys")
 
     return render(request, "vendor_api_keys.html", {"keys": keys})
+
+def send_purchase_webhooks(purchase: Purchase):
+    """
+    Notify all active webhooks for the vendor that owns the product
+    for this purchase.
+    """
+    vendor = purchase.product.owner
+    if not vendor:
+        return
+
+    webhooks = VendorWebhook.objects.filter(vendor=vendor, is_active=True)
+    if not webhooks.exists():
+        return
+
+    payload = {
+        "event": "purchase.created",
+        "purchase": {
+            "id": purchase.pk,
+            "buyer": {
+                "id": purchase.user.pk,
+                "username": purchase.user.username,
+            },
+            "product": {
+                "id": purchase.product.pk,
+                "name": purchase.product.name,
+            },
+            "quantity": purchase.quantity,
+            "total_tokens": purchase.total_tokens,
+            "created_at": purchase.created_at.isoformat(),
+        },
+        "vendor": {
+            "id": vendor.pk,
+            "username": vendor.username,
+        },
+    }
+
+    body = json.dumps(payload)
+
+    for webhook in webhooks:
+        headers = {
+            "Content-Type": "application/json",
+        }
+
+        # Optional HMAC signature with secret
+        if webhook.secret:
+            signature = hmac.new(
+                webhook.secret.encode("utf-8"),
+                body.encode("utf-8"),
+                hashlib.sha256,
+            ).hexdigest()
+            headers["X-UPBT-Signature"] = signature
+
+        try:
+            # Best-effort: don't crash the main request if webhook fails
+            requests.post(webhook.url, data=body, headers=headers, timeout=5)
+        except Exception as e:
+            # In real life, log this properly
+            print(f"Error sending webhook to {webhook.url}: {e}")
+
+@login_required
+@user_passes_test(is_vendor)
+def vendor_webhooks(request):
+    # Assume at most 1 webhook per vendor for simplicity
+    webhook, created = VendorWebhook.objects.get_or_create(
+        vendor=request.user,
+        defaults={"url": "", "is_active": False},
+    )
+
+    if request.method == "POST":
+        url = (request.POST.get("url") or "").strip()
+        secret = (request.POST.get("secret") or "").strip()
+        is_active = request.POST.get("is_active") == "on"
+
+        webhook.url = url
+        webhook.secret = secret
+        # Only activate if we have a non-empty URL
+        webhook.is_active = bool(url) and is_active
+        webhook.save()
+
+        messages.success(request, "Webhook settings updated.")
+        return redirect("vendor_webhooks")
+
+    return render(request, "vendor_webhooks.html", {"webhook": webhook})

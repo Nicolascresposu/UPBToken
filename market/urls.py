@@ -22,7 +22,7 @@ urlpatterns = [
     # API endpoints for vendors
     path("api/vendor/purchases/<int:pk>/", views.api_purchase_detail, name="api_purchase_detail"),
     path("api/vendor/transfer/", views.api_transfer_tokens, name="api_transfer_tokens"),
-
+    path("vendor/webhooks/", views.vendor_webhooks, name="vendor_webhooks"),
 
 ]
 
