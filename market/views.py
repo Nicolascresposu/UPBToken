@@ -36,7 +36,7 @@ def signup_view(request):
             user = form.save()
             # UserTokenAccount is created by signal
             login(request, user)
-            messages.success(request, "Account created! Welcome to UPBToken.")
+            messages.success(request, "Account created! Welcome to UPBolis.")
             return redirect("product_list")
     else:
         form = SignUpForm()
@@ -75,7 +75,7 @@ def product_detail(request, pk):
 #     account = UserTokenAccount.objects.select_for_update().get(pk=account.pk)
 
 #     if account.token_balance < total_cost:
-#         messages.error(request, "Not enough UPBTokens to buy this product.")
+#         messages.error(request, "Not enough UPBolis to buy this product.")
 #         return redirect("product_detail", pk=product.pk)
 
 #     # Deduct tokens
@@ -91,7 +91,7 @@ def product_detail(request, pk):
 
 #     messages.success(
 #         request,
-#         f"You bought {quantity} x {product.name} for {total_cost} UPBTokens."
+#         f"You bought {quantity} x {product.name} for {total_cost} UPBolis."
 #     )
 #     return redirect("dashboard")
 
@@ -113,7 +113,7 @@ def buy_product(request, pk):
     total_cost = product.price_tokens * quantity
 
     if buyer_account.token_balance < total_cost:
-        messages.error(request, "Not enough UPBTokens to buy this product.")
+        messages.error(request, "Not enough UPBolis to buy this product.")
         return redirect("product_detail", pk=product.pk)
 
     # 1) Deduct from buyer
@@ -140,7 +140,7 @@ def buy_product(request, pk):
 
     messages.success(
         request,
-        f"You bought {quantity} x {product.name} for {total_cost} UPBTokens."
+        f"You bought {quantity} x {product.name} for {total_cost} UPBolis."
     )
     return redirect("dashboard")
 
@@ -235,7 +235,7 @@ def buy_tokens(request):
 
             messages.success(
                 request,
-                f"Your balance was increased by {amount} UPBTokens."
+                f"Your balance was increased by {amount} UPBolis."
             )
             return redirect("dashboard")
     else:
