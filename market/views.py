@@ -168,7 +168,6 @@ def my_products(request):
     products = Product.objects.filter(owner=request.user).order_by("name")
     return render(request, "my_products.html", {"products": products})
 
-
 @login_required
 @user_passes_test(is_vendor)
 def product_create(request):
@@ -286,20 +285,20 @@ def api_purchase_detail(request, pk):
         return JsonResponse({"error": "Not authorized for this purchase"}, status=403)
 
     data = {
-        "id": purchase.pk,  # <--- changed
+        "id": purchase.pk,
         "buyer": {
-            "id": purchase.user.pk,  # <--- changed
+            "id": purchase.user.pk,
             "username": purchase.user.username,
         },
         "product": {
-            "id": purchase.product.pk,  # <--- changed
+            "id": purchase.product.pk,
             "name": purchase.product.name,
         },
         "quantity": purchase.quantity,
         "total_tokens": purchase.total_tokens,
         "created_at": purchase.created_at.isoformat(),
         "vendor": {
-            "id": api_key.vendor.pk,  # <--- changed
+            "id": api_key.vendor.pk,
             "username": api_key.vendor.username,
         },
     }
@@ -313,7 +312,7 @@ def api_transfer_tokens(request):
     if not api_key:
         return JsonResponse({"error": "Invalid or missing API key"}, status=401)
 
-    # --- Parse body: try JSON, then form-encoded ---
+    # Parse body try JSON, then if we fail form-encoded 
     payload = {}
 
     if request.body:
@@ -326,7 +325,7 @@ def api_transfer_tokens(request):
             if request.POST:
                 payload = request.POST
             else:
-                # Last resort: show what we actually received to help debugging
+                # De ultima - tiramos error y mostramos el cuerpo para debuggear si algo sale mal
                 return JsonResponse(
                     {
                         "error": "Invalid body; expected JSON or form data",
