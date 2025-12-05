@@ -8,88 +8,90 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    // GET /api/products  → lista para compradores, sellers, etc.
+    // GET /api/products
     public function index()
     {
-        $products = Product::where('is_active', true)->get();
+        $products = Product::where('is_active', true)
+            ->where('stock', '>', 0)
+            ->with('seller')
+            ->get();
+
         return response()->json($products);
     }
 
     // GET /api/products/{product}
     public function show(Product $product)
     {
-        // podrías ocultar productos inactivos a buyers si quieres:
-        if (! $product->is_active) {
-            return response()->json(['message' => 'Producto no disponible'], 404);
-        }
+        $product->load('seller');
 
         return response()->json($product);
     }
 
-    // GET /api/seller/products  → productos del seller logueado
+    // SELLER: GET /api/seller/products
     public function myProducts(Request $request)
     {
-        $user = $request->user();
-
-        $products = Product::where('seller_id', $user->id)->get();
+        $products = Product::where('seller_id', $request->user()->id)
+            ->orderBy('id', 'desc')
+            ->get();
 
         return response()->json($products);
     }
 
-    // POST /api/seller/products  → crear producto (seller o admin)
+    // SELLER: POST /api/seller/products
     public function store(Request $request)
     {
-        $user = $request->user(); // seller o admin
-
         $data = $request->validate([
             'name'        => 'required|string|max:255',
             'description' => 'nullable|string',
-            'price'       => 'required|numeric|min:0',
+            'price'       => 'required|numeric|min:0.01',
             'stock'       => 'required|integer|min:0',
-            'is_active'   => 'boolean',
+            'is_active'   => 'sometimes|boolean',
         ]);
 
-        $data['seller_id'] = $user->id;
-
-        $product = Product::create($data);
+        $product = Product::create([
+            'seller_id'   => $request->user()->id,
+            'name'        => $data['name'],
+            'description' => $data['description'] ?? null,
+            'price'       => $data['price'],
+            'stock'       => $data['stock'],
+            'is_active'   => $data['is_active'] ?? true,
+        ]);
 
         return response()->json($product, 201);
     }
 
-    // PUT /api/seller/products/{product}
+    // SELLER: PUT /api/seller/products/{product}
     public function update(Request $request, Product $product)
     {
-        $user = $request->user();
-
-        // Solo el seller dueño o un admin
-        if ($user->role !== 'admin' && $product->seller_id !== $user->id) {
+        if ($product->seller_id !== $request->user()->id && $request->user()->role !== 'admin') {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
         $data = $request->validate([
             'name'        => 'sometimes|string|max:255',
-            'description' => 'sometimes|nullable|string',
-            'price'       => 'sometimes|numeric|min:0',
+            'description' => 'nullable|string',
+            'price'       => 'sometimes|numeric|min:0.01',
             'stock'       => 'sometimes|integer|min:0',
             'is_active'   => 'sometimes|boolean',
         ]);
 
-        $product->update($data);
+        $product->fill($data);
+        $product->save();
 
         return response()->json($product);
     }
 
-    // DELETE /api/seller/products/{product}
+    // SELLER: DELETE /api/seller/products/{product}
     public function destroy(Request $request, Product $product)
     {
-        $user = $request->user();
-
-        if ($user->role !== 'admin' && $product->seller_id !== $user->id) {
+        if ($product->seller_id !== $request->user()->id && $request->user()->role !== 'admin') {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
         $product->delete();
 
-        return response()->json(['message' => 'Producto eliminado']);
+        return response()->json([
+            'message' => 'Producto eliminado',
+        ]);
     }
 }

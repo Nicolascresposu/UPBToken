@@ -16,7 +16,7 @@ class SellerOrderController extends Controller
         $orders = Order::whereHas('items.product', function ($q) use ($sellerId) {
                 $q->where('seller_id', $sellerId);
             })
-            ->with(['items.product'])
+            ->with('items.product')
             ->latest()
             ->get();
 
@@ -28,7 +28,6 @@ class SellerOrderController extends Controller
     {
         $sellerId = $request->user()->id;
 
-        // Verificar que esta orden tenga al menos un item de este seller
         $hasItems = $order->items()
             ->whereHas('product', function ($q) use ($sellerId) {
                 $q->where('seller_id', $sellerId);
@@ -39,7 +38,6 @@ class SellerOrderController extends Controller
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
-        // Cargamos solo para mostrar; si quisieras podrías filtrar solo items del seller
         $order->load('items.product');
 
         return response()->json($order);

@@ -12,10 +12,7 @@ class AdminTransactionController extends Controller
     // GET /api/admin/transactions
     public function index()
     {
-        $transactions = Transaction::with([
-                'fromWallet.user',
-                'toWallet.user',
-            ])
+        $transactions = Transaction::with(['fromWallet.user', 'toWallet.user'])
             ->orderByDesc('created_at')
             ->get();
 
@@ -29,7 +26,7 @@ class AdminTransactionController extends Controller
 
         if (! $wallet) {
             return response()->json([
-                'message' => 'El usuario no tiene wallet.',
+                'message'      => 'El usuario no tiene wallet.',
                 'transactions' => [],
             ]);
         }

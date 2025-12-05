@@ -52,7 +52,7 @@ class AdminWalletController extends Controller
             $wallet->save();
 
             Transaction::create([
-                'from_wallet_id' => null, // viene "del sistema"
+                'from_wallet_id' => null,
                 'to_wallet_id'   => $wallet->id,
                 'amount'         => $data['amount'],
                 'type'           => 'deposit',

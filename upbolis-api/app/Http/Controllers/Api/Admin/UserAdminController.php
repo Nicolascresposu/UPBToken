@@ -40,12 +40,9 @@ class UserAdminController extends Controller
         ]);
     }
 
-    // PATCH /api/admin/users/{user}/deactivate
-    // OJO: esto es un stub, para que no rompa.
-    // Si quieres desactivar de verdad, agrega un campo is_active en la tabla users.
+    // PATCH /api/admin/users/{user}/deactivate (stub)
     public function deactivate(User $user)
     {
-        //  agregar campo is_active en users y actualizar
         return response()->json([
             'message' => 'Funcionalidad de desactivación pendiente de implementación.',
         ]);
