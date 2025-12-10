@@ -16,6 +16,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role', // admin, seller, buyer
+        'webhook_url',
     ];
 
     protected $hidden = [

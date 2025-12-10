@@ -185,14 +185,14 @@ Django Frontend actualiza la UI
 
 ## Próximos Pasos Opcionales / TO-DO (En orden de prioridad)
 
-0. **(Urgente) Dashboard de administrador para agregar y remover el cargo de seller a usuarios.**
-1. **(Igual de urgente) Webhooks para los sellers para que puedan ser notificados cuando su producto es comprado**
-2. **(Relativamente urgente) Editar productos**: Agregar modal para editar productos existentes (Como aumentar le stock)
+~~0. **(Urgente) Dashboard de administrador para agregar y remover el cargo de seller a usuarios.**~~
+~~1. **(Igual de urgente) Webhooks para los sellers para que puedan ser notificados cuando su producto es comprado**~~
+~~2. **(Relativamente urgente) Editar productos**: Agregar modal para editar productos existentes (Como aumentar le stock)~~
 3. **Filtros**: Buscar/filtrar productos por nombre o precio (fzf? busqueda normal?)
 4. **Validaciones**: Más validaciones en frontend (ej: saldo insuficiente)
 5. **Imagen de productos**: Permitir subir imágenes
 6. **Reviews**: Sistema de reseñas y valoraciones
-8. **Carrito**: Agregar múltiples items al carrito antes de confirmar
+~~8. **Carrito**: Agregar múltiples items al carrito antes de confirmar~~ Descartado. Muy complicado con el sistema de webhooks actual.
 
 ## Solución de Problemas
 

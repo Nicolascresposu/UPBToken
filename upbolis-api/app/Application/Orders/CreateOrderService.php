@@ -10,6 +10,7 @@ use App\Domain\Transaction\TransactionRepositoryInterface;
 use App\Domain\Wallet\WalletRepositoryInterface;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 
 class CreateOrderService
@@ -28,7 +29,9 @@ class CreateOrderService
      */
     public function handle(User $buyer, array $items): Order
     {
-        return DB::transaction(function () use ($buyer, $items) {
+        $itemsData = [];
+        
+        $order = DB::transaction(function () use ($buyer, $items, &$itemsData) {
             if (empty($items)) {
                 throw new BusinessException('La orden debe tener al menos un producto.');
             }
@@ -132,5 +135,28 @@ class CreateOrderService
 
             return $order->load('items.product');
         });
+
+        // Notify sellers via webhook AFTER transaction completes
+        // This ensures the order is committed and webhook fires reliably with proper body
+        try {
+            foreach ($itemsData as $itemData) {
+                $sellerId = $itemData['seller_id'];
+                $seller = User::find($sellerId);
+                if ($seller && ! empty($seller->webhook_url)) {
+                    // send JSON payload with explicit Content-Type header
+                    Http::timeout(3)
+                        ->withHeaders(['Content-Type' => 'application/json'])
+                        ->post($seller->webhook_url, [
+                            'buyer_username' => $buyer->name,
+                            'product'        => $itemData['product']->name,
+                            'amount'         => $itemData['subtotal'],
+                        ]);
+                }
+            }
+        } catch (\Exception $e) {
+            // don't fail the order if webhook notification fails; log if needed
+        }
+
+        return $order;
     }
 }

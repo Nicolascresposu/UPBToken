@@ -8,14 +8,133 @@
 
 <h2>Usuarios (ejemplo)</h2>
 {% if users %}
-    <ul>
+    <ul id="usersList">
         {% for u in users %}
-            <li>
-                {{ u.name }} - {{ u.email }} - {{ u.role }}
+            <li id="user-{{ u.id }}">
+                {{ u.name }} - {{ u.email }} - <span class="user-role">{{ u.role }}</span>
+                {% if u.role != 'seller' %}
+                    <button class="btn btn-primary promote-user" data-user-id="{{ u.id }}" style="margin-left:10px;">Hacer Vendedor</button>
+                {% else %}
+                    <button class="btn btn-warning demote-user" data-user-id="{{ u.id }}" style="margin-left:10px;">Quitar Rol Vendedor</button>
+                {% endif %}
             </li>
         {% endfor %}
     </ul>
 {% else %}
     <p>No hay usuarios o el endpoint aún no está implementado.</p>
 {% endif %}
+
+<script>
+    const adminToken = localStorage.getItem('api_token');
+    const API_BASE = "http://127.0.0.1:8000/api";
+
+    document.querySelectorAll('.promote-user').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const userId = btn.getAttribute('data-user-id');
+            if (!confirm('Convertir este usuario en vendedor?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`,
+                    },
+                    body: JSON.stringify({ role: 'seller' }),
+                });
+
+                if (response.ok) {
+                    const json = await response.json();
+                    const li = document.getElementById(`user-${userId}`);
+                    if (li) {
+                        const roleSpan = li.querySelector('.user-role');
+                        if (roleSpan) roleSpan.textContent = 'seller';
+                        const btnEl = li.querySelector('.promote-user');
+                        if (btnEl) btnEl.remove();
+                    }
+                    alert('Usuario promovido a vendedor');
+                } else {
+                    let err = 'Error al promover usuario';
+                    try { const json = await response.json(); if (json?.message) err = json.message; } catch (_) { try { const text = await response.text(); if (text) err = text; } catch (_) {} }
+                    alert(err);
+                }
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        });
+    });
+
+    // Demote seller to buyer
+    document.querySelectorAll('.demote-user').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const userId = btn.getAttribute('data-user-id');
+            if (!confirm('Quitar rol de vendedor a este usuario?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${adminToken}`,
+                    },
+                    body: JSON.stringify({ role: 'buyer' }),
+                });
+
+                if (response.ok) {
+                    const json = await response.json();
+                    const li = document.getElementById(`user-${userId}`);
+                    if (li) {
+                        const roleSpan = li.querySelector('.user-role');
+                        if (roleSpan) roleSpan.textContent = 'buyer';
+                        // remove demote button and add promote button back
+                        const demBtn = li.querySelector('.demote-user');
+                        if (demBtn) demBtn.remove();
+                        const promoteBtn = document.createElement('button');
+                        promoteBtn.className = 'btn btn-primary promote-user';
+                        promoteBtn.setAttribute('data-user-id', userId);
+                        promoteBtn.style.marginLeft = '10px';
+                        promoteBtn.textContent = 'Hacer Vendedor';
+                        li.appendChild(promoteBtn);
+                        // attach handler to new promote button
+                        promoteBtn.addEventListener('click', async (ev) => {
+                            if (!confirm('Convertir este usuario en vendedor?')) return;
+                            try {
+                                const resp = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Accept': 'application/json',
+                                        'Authorization': `Bearer ${adminToken}`,
+                                    },
+                                    body: JSON.stringify({ role: 'seller' }),
+                                });
+                                if (resp.ok) {
+                                    const j = await resp.json();
+                                    if (roleSpan) roleSpan.textContent = 'seller';
+                                    promoteBtn.remove();
+                                    alert('Usuario promovido a vendedor');
+                                } else {
+                                    let err = 'Error al promover usuario';
+                                    try { const j = await resp.json(); if (j?.message) err = j.message; } catch (_) { try { const t = await resp.text(); if (t) err = t; } catch (_) {} }
+                                    alert(err);
+                                }
+                            } catch (err) {
+                                alert(`Error: ${err.message}`);
+                            }
+                        });
+                    }
+                    alert('Usuario degradado a comprador');
+                } else {
+                    let err = 'Error al degradar usuario';
+                    try { const json = await response.json(); if (json?.message) err = json.message; } catch (_) { try { const text = await response.text(); if (text) err = text; } catch (_) {} }
+                    alert(err);
+                }
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        });
+    });
+</script>
 {% endblock %}

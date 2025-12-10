@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Admin\AdminWalletController;
 use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminTransactionController;
 use App\Http\Controllers\Api\Seller\SellerOrderController;
+use App\Http\Controllers\Api\Seller\WebhookController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -58,6 +59,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // --- Órdenes relacionadas con mis productos ---
         Route::get('orders',                   [SellerOrderController::class, 'index']);  // órdenes donde hay productos míos
         Route::get('orders/{order}',           [SellerOrderController::class, 'show']);   // detalle filtrado por mis items
+        // webhook configuration for seller
+        Route::post('webhook',                  [WebhookController::class, 'store']);
     });
 
     // ==================================================

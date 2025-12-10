@@ -24,6 +24,14 @@
         <h2>Catálogo de Productos</h2>
 
         {% if products %}
+            <div class="search-bar" style="margin-bottom: 20px;">
+                <input 
+                    type="text" 
+                    id="productSearchInput" 
+                    placeholder="Buscar productos por nombre..." 
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                />
+            </div>
             <div class="products-grid">
                 {% for p in products %}
                     <div class="product-card">
@@ -669,5 +677,20 @@
             topUpModal.style.display = 'none';
         }
     });
+
+    // Product search/filter functionality
+    const searchInput = document.getElementById('productSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const productCards = document.querySelectorAll('.products-grid .product-card');
+
+            productCards.forEach(card => {
+                const productName = card.querySelector('h3')?.textContent.toLowerCase() || '';
+                const isMatch = productName.includes(query);
+                card.style.display = isMatch ? 'block' : 'none';
+            });
+        });
+    }
 </script>
 {% endblock %}

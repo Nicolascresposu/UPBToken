@@ -6,6 +6,15 @@
     <h1>Dashboard Vendedor</h1>
     <p>Hola, <strong>{{ user.name }}</strong> ({{ user.role }})</p>
 
+    <div class="webhook-config" style="margin-top:12px; margin-bottom:12px;">
+        <label for="webhookUrl"><strong>Webhook URL (notificaciones de venta):</strong></label>
+        <div style="display:flex; gap:8px; margin-top:6px;">
+            <input type="url" id="webhookUrl" placeholder="https://mi-servicio/endpoint" style="flex:1; padding:8px;" />
+            <button id="saveWebhookBtn" class="btn btn-primary">Guardar Webhook</button>
+        </div>
+        <p id="webhookMsg" style="display:none; margin-top:6px;"></p>
+    </div>
+
     <div class="seller-grid">
         <!-- Crear producto -->
         <div class="section create-product-section">
@@ -42,269 +51,204 @@
             <div id="productsList">
                 {% if products %}
                     {% for p in products %}
-                        <div class="product-card">
-                            <h3>{{ p.name }}</h3>
-                            <p class="description">{{ p.description }}</p>
+                        {% if p.is_active %}
+                            <div class="product-card" data-product-id="{{ p.id }}">
+                            <h3 class="product-name">{{ p.name }}</h3>
+                            <p class="description product-desc">{{ p.description }}</p>
                             <div class="product-info">
                                 <span class="price">{{ p.price }} UPBolis</span>
-                                <span class="stock">Stock: {{ p.stock }}</span>
+                                <span class="stock" id="stock-display-{{ p.id }}">Stock: {{ p.stock }}</span>
                             </div>
-                            <button class="btn btn-danger delete-product" data-product-id="{{ p.id }}">Eliminar</button>
+                            <div style="display:flex; gap:8px; margin-top:8px; align-items:center;">
+                                <input type="number" min="0" id="stock-input-{{ p.id }}" value="{{ p.stock }}" style="width:90px; padding:6px;" />
+                                <button class="btn btn-primary update-stock" data-product-id="{{ p.id }}">Actualizar Stock</button>
+                                <button class="btn btn-secondary edit-product" data-product-id="{{ p.id }}" data-product-name="{{ p.name|escapejs }}" data-product-description="{{ p.description|escapejs }}" data-product-price="{{ p.price }}" data-product-stock="{{ p.stock }}">Editar</button>
+                                <button class="btn btn-danger delete-product" data-product-id="{{ p.id }}">Eliminar</button>
+                            </div>
                         </div>
-                    {% endfor %}
+                    {% endif %}
+                {% endfor %}
                 {% else %}
                     <p class="empty-message">No tienes productos aún. ¡Crea uno para comenzar!</p>
                 {% endif %}
             </div>
         </div>
     </div>
+
+    <!-- Edit product modal -->
+    <div id="editProductModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Editar Producto</h2>
+            <div style="display:flex; flex-direction:column; gap:10px; margin-top:10px;">
+                <input type="text" id="editProductName" placeholder="Nombre" />
+                <textarea id="editProductDescription" rows="4" placeholder="Descripción"></textarea>
+                <input type="number" id="editProductPrice" step="0.01" min="0.01" placeholder="Precio" />
+                <input type="number" id="editProductStock" min="0" placeholder="Stock" />
+                <label><input type="checkbox" id="editProductActive" /> Disponible</label>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                    <button id="confirmEditBtn" class="btn btn-primary">Guardar cambios</button>
+                    <button class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <style>
-    .seller-container {
-        padding: 20px;
-    }
-
-    .seller-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 30px;
-        margin-top: 30px;
-    }
-
-    .section {
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 20px;
-        background-color: #f9f9f9;
-    }
-
-    .product-form {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .form-group label {
-        font-weight: bold;
-        margin-bottom: 5px;
-        color: #333;
-    }
-
-    .form-group input,
-    .form-group textarea {
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-family: inherit;
-        font-size: 14px;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
-    }
-
-    .btn {
-        padding: 10px 15px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: bold;
-        transition: background-color 0.3s;
-    }
-
-    .btn-primary {
-        background-color: #007bff;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background-color: #0056b3;
-    }
-
-    .btn-danger {
-        background-color: #dc3545;
-        color: white;
-        padding: 8px 12px;
-        font-size: 12px;
-    }
-
-    .btn-danger:hover {
-        background-color: #c82333;
-    }
-
-    #formMessage {
-        padding: 10px;
-        border-radius: 4px;
-        text-align: center;
-        font-weight: bold;
-    }
-
-    #formMessage.success {
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-    }
-
-    #formMessage.error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-    }
-
-    .product-card {
-        border: 1px solid #e0e0e0;
-        border-radius: 6px;
-        padding: 15px;
-        margin-bottom: 15px;
-        background-color: white;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .product-card h3 {
-        margin: 0 0 10px 0;
-        color: #333;
-    }
-
-    .product-card .description {
-        color: #666;
-        font-size: 14px;
-        margin: 8px 0;
-    }
-
-    .product-info {
-        display: flex;
-        justify-content: space-between;
-        font-size: 14px;
-        margin: 10px 0;
-    }
-
-    .product-info .price {
-        font-weight: bold;
-        color: #28a745;
-    }
-
-    .product-info .stock {
-        color: #666;
-    }
-
-    .empty-message {
-        text-align: center;
-        color: #666;
-        font-style: italic;
-        padding: 40px 20px;
-    }
-
-    @media (max-width: 768px) {
-        .seller-grid {
-            grid-template-columns: 1fr;
-        }
-    }
+    .seller-container { padding: 20px; }
+    .seller-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 30px; }
+    .section { border: 1px solid #ddd; border-radius: 8px; padding: 20px; background-color: #f9f9f9; }
+    .product-form { display:flex; flex-direction:column; gap:15px; }
+    .form-group { display:flex; flex-direction:column; }
+    .form-group label { font-weight:bold; margin-bottom:5px; color:#333; }
+    .form-group input, .form-group textarea { padding:10px; border:1px solid #ccc; border-radius:4px; font-family:inherit; font-size:14px; }
+    .btn { padding:10px 15px; border:none; border-radius:4px; cursor:pointer; font-size:14px; font-weight:bold; }
+    .btn-primary { background-color:#007bff; color:white; }
+    .btn-secondary { background-color:#6c757d; color:white; }
+    .btn-danger { background-color:#dc3545; color:white; }
+    .product-card { border:1px solid #e0e0e0; border-radius:6px; padding:15px; margin-bottom:15px; background:white; }
+    .product-info { display:flex; justify-content:space-between; margin:10px 0; }
+    .empty-message { text-align:center; color:#666; font-style:italic; padding:40px 20px; }
+    .modal { position: fixed; z-index: 1000; left:0; top:0; width:100%; height:100%; background-color: rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; }
+    .modal-content { background:white; padding:20px; border-radius:6px; max-width:500px; width:100%; }
+    @media (max-width:768px) { .seller-grid { grid-template-columns:1fr; } }
 </style>
 
 <script>
     const token = localStorage.getItem('api_token');
-    const API_BASE = "http://127.0.0.1:8000/api"; // API Laravel
+    const API_BASE = "http://127.0.0.1:8000/api";
 
     // Crear producto
     document.getElementById('productForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-
         const data = {
             name: document.getElementById('productName').value,
             description: document.getElementById('productDescription').value,
             price: parseFloat(document.getElementById('productPrice').value),
             stock: parseInt(document.getElementById('productStock').value),
         };
-
         const msg = document.getElementById('formMessage');
-
         try {
             const response = await fetch(`${API_BASE}/seller/products`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(data),
             });
+            if (response.ok) { msg.textContent = '¡Producto creado exitosamente!'; msg.className = 'success'; msg.style.display = 'block'; document.getElementById('productForm').reset(); setTimeout(() => location.reload(), 1200); }
+            else { let errMsg = 'Error al crear producto'; try { const j = await response.json(); if (j?.message) errMsg = j.message; } catch (_) { try { const t = await response.text(); if (t) errMsg = t; } catch (_) {} } msg.textContent = errMsg; msg.className = 'error'; msg.style.display = 'block'; }
+        } catch (err) { msg.textContent = `Error: ${err.message}`; msg.className = 'error'; msg.style.display = 'block'; }
+    });
 
-            if (response.ok) {
-                // intentar parsear JSON, si falla usar texto
-                let product = null;
-                try { product = await response.json(); } catch (e) { product = null; }
+    // Marca producto como no disponible (soft-delete)
+    document.querySelectorAll('.delete-product').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('¿Estás seguro de que quieres marcar este producto como no disponible?')) return;
+            const productId = btn.getAttribute('data-product-id');
+            try {
+                const response = await fetch(`${API_BASE}/seller/products/${productId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ is_active: false }),
+                });
+                if (response.ok) { alert('Producto marcado como no disponible'); location.reload(); }
+                else { let err = 'Error al actualizar el producto'; try { const j = await response.json(); if (j?.message) err = j.message; } catch (_) { try { const t = await response.text(); if (t) err = t; } catch (_) {} } alert(err); }
+            } catch (err) { alert(`Error: ${err.message}`); }
+        });
+    });
 
-                msg.textContent = '¡Producto creado exitosamente!';
-                msg.className = 'success';
-                msg.style.display = 'block';
-                document.getElementById('productForm').reset();
+    // Actualizar stock
+    document.querySelectorAll('.update-stock').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const productId = btn.getAttribute('data-product-id');
+            const input = document.getElementById(`stock-input-${productId}`);
+            const newStock = parseInt(input.value);
+            if (isNaN(newStock) || newStock < 0) { alert('Ingrese un stock válido (0 o mayor)'); return; }
+            try {
+                const response = await fetch(`${API_BASE}/seller/products/${productId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ stock: newStock }),
+                });
+                if (response.ok) { const disp = document.getElementById(`stock-display-${productId}`); if (disp) disp.textContent = `Stock: ${newStock}`; alert('Stock actualizado'); }
+                else { let err = 'No se pudo actualizar el stock'; try { const j = await response.json(); if (j?.message) err = j.message; } catch (_) { try { const t = await response.text(); if (t) err = t; } catch (_) {} } alert(err); }
+            } catch (err) { alert(`Error: ${err.message}`); }
+        });
+    });
 
-                // Recargar página después de 2 segundos
-                setTimeout(() => location.reload(), 2000);
+    // Edit product flow
+    let currentEditProductId = null;
+    document.querySelectorAll('.edit-product').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            currentEditProductId = btn.getAttribute('data-product-id');
+            document.getElementById('editProductName').value = btn.getAttribute('data-product-name') || '';
+            document.getElementById('editProductDescription').value = btn.getAttribute('data-product-description') || '';
+            document.getElementById('editProductPrice').value = btn.getAttribute('data-product-price') || '';
+            document.getElementById('editProductStock').value = btn.getAttribute('data-product-stock') || '';
+            document.getElementById('editProductActive').checked = true;
+            document.getElementById('editProductModal').style.display = 'flex';
+        });
+    });
+
+    function closeEditModal() { document.getElementById('editProductModal').style.display = 'none'; currentEditProductId = null; }
+
+    document.getElementById('confirmEditBtn').addEventListener('click', async () => {
+        if (!currentEditProductId) return alert('Producto no seleccionado');
+        const payload = {
+            name: document.getElementById('editProductName').value,
+            description: document.getElementById('editProductDescription').value,
+            price: parseFloat(document.getElementById('editProductPrice').value),
+            stock: parseInt(document.getElementById('editProductStock').value),
+            is_active: document.getElementById('editProductActive').checked,
+        };
+        try {
+            const response = await fetch(`${API_BASE}/seller/products/${currentEditProductId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(payload),
+            });
+            if (response.ok) { closeEditModal(); alert('Producto actualizado'); setTimeout(() => location.reload(), 600); }
+            else { let err = 'Error al actualizar el producto'; try { const j = await response.json(); if (j?.message) err = j.message; } catch (_) { try { const t = await response.text(); if (t) err = t; } catch (_) {} } alert(err); }
+        } catch (err) { alert(`Error: ${err.message}`); }
+    });
+
+    // Webhook config: load current webhook and allow saving
+    async function loadWebhook() {
+        try {
+            const r = await fetch(`${API_BASE}/auth/me`, { headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${token}` } });
+            if (r.ok) {
+                const j = await r.json();
+                if (j?.webhook_url) document.getElementById('webhookUrl').value = j.webhook_url;
+            }
+        } catch (_) {}
+    }
+
+    document.getElementById('saveWebhookBtn').addEventListener('click', async () => {
+        const url = document.getElementById('webhookUrl').value.trim();
+        const msg = document.getElementById('webhookMsg');
+        msg.style.display = 'none';
+        try {
+            const resp = await fetch(`${API_BASE}/seller/webhook`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ url: url || null }),
+            });
+            if (resp.ok) {
+                msg.textContent = 'Webhook guardado.'; msg.style.color = 'green'; msg.style.display = 'block';
             } else {
-                let errMsg = 'Error al crear producto';
-                try {
-                    const error = await response.json();
-                    if (error) errMsg = error.message || JSON.stringify(error);
-                } catch (parseErr) {
-                    // no JSON - devolver texto
-                    try { const text = await response.text(); if (text) errMsg = text; } catch (_) {}
-                }
-
-                msg.textContent = errMsg;
-                msg.className = 'error';
-                msg.style.display = 'block';
+                let em = 'Error guardando webhook';
+                try { const ej = await resp.json(); if (ej?.message) em = ej.message; } catch (_) { try { const t = await resp.text(); if (t) em = t; } catch (_) {} }
+                msg.textContent = em; msg.style.color = 'red'; msg.style.display = 'block';
             }
         } catch (err) {
-            msg.textContent = `Error: ${err.message}`;
-            msg.className = 'error';
-            msg.style.display = 'block';
+            msg.textContent = `Error: ${err.message}`; msg.style.color = 'red'; msg.style.display = 'block';
         }
     });
 
-    // Eliminar producto
-    document.querySelectorAll('.delete-product').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            if (!confirm('¿Estás seguro de que quieres eliminar este producto?')) return;
-
-            const productId = btn.getAttribute('data-product-id');
-
-            try {
-                const response = await fetch(`${API_BASE}/seller/products/${productId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-
-                if (response.ok) {
-                    alert('Producto eliminado');
-                    location.reload();
-                } else {
-                    let errMsg = 'Error al eliminar producto';
-                    try {
-                        const error = await response.json();
-                        if (error) errMsg = error.message || JSON.stringify(error);
-                    } catch (_) {
-                        try { const text = await response.text(); if (text) errMsg = text; } catch (_) {}
-                    }
-                    alert(errMsg);
-                }
-            } catch (err) {
-                alert(`Error: ${err.message}`);
-            }
-        });
-    });
+    // initialize webhook input
+    loadWebhook();
 </script>
+
 {% endblock %}
+
