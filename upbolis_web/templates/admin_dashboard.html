@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Admin - UPBolis{% endblock %}
+
+{% block content %}
+<h1>Dashboard Admin</h1>
+
+<p>Hola, <strong>{{ user.name }}</strong> ({{ user.role }})</p>
+
+<h2>Usuarios (ejemplo)</h2>
+{% if users %}
+    <ul>
+        {% for u in users %}
+            <li>
+                {{ u.name }} - {{ u.email }} - {{ u.role }}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No hay usuarios o el endpoint aún no está implementado.</p>
+{% endif %}
+{% endblock %}

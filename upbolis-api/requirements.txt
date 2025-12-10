@@ -1,0 +1,21 @@
+cd C:\xampp\htdocs
+
+git clone <URL_DEL_REPO> upbolis-api
+cd upbolis-api
+
+composer install
+
+copy .env.example .env
+
+REM === EDITAR MANUALMENTE EL ARCHIVO .env CON ESTOS VALORES ===
+REM DB_CONNECTION=mysql
+REM DB_HOST=127.0.0.1
+REM DB_PORT=3306
+REM DB_DATABASE=upbolis
+REM DB_USERNAME=root
+REM DB_PASSWORD=
+REM ============================================================
+
+php artisan key:generate
+
+php artisan migrate --seed

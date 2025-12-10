@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Login - UPBolis{% endblock %}
+
+{% block content %}
+<div class="login-layout">
+
+    <div class="login-hero">
+        <div class="login-badge">
+            <span>🔐</span>
+            <span>Pasarela UPBolis segura</span>
+        </div>
+        <h1 class="login-hero-title">
+            Administra tus <span class="login-hero-highlight">UPBolis</span>
+        </h1>
+        <p class="login-hero-text">
+            Inicia sesión para enviar, recibir y gestionar pagos con la moneda digital UPBolis.
+            Conecta tus compras, videojuegos, pedidos y más desde un solo panel.
+        </p>
+    </div>
+
+    <div class="login-form-box">
+        <h2 class="section-title">
+            <span class="section-title-pill">1</span>
+            <span>Accede a tu cuenta</span>
+        </h2>
+        <p class="page-subtitle">
+            Usa el correo y contraseña que registraste en la plataforma UPBolis.
+        </p>
+
+        <form method="post" class="form-grid">
+            {% csrf_token %}
+
+            <div class="form-field">
+                <label>Correo electrónico</label>
+                <input type="email" name="email" placeholder="tucorreo@upbolis.com" required />
+            </div>
+
+            <div class="form-field">
+                <label>Contraseña</label>
+                <input type="password" name="password" placeholder="••••••••" required />
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-primary">
+                    Entrar a UPBolis
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

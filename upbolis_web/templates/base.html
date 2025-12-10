@@ -1,0 +1,49 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}UPBolis Web{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+    <nav class="app-navbar">
+        <div class="app-brand">
+            <div class="app-logo"></div>
+            <div class="app-title">UPBolis</div>
+        </div>
+        <div class="app-user-area">
+            {% if request.session.api_user %}
+                <span>
+                    {{ request.session.api_user.name }}
+                </span>
+                <span class="app-user-role-pill">
+                    {{ request.session.api_user.role|default:"" }}
+                </span>
+                <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-ghost">Salir</button>
+                </form>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="app-main">
+        <section class="app-container">
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-error">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </section>
+    </main>
+</div>
+</body>
+</html>

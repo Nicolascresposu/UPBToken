@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Seller - UPBolis{% endblock %}
+
+{% block content %}
+<h1>Dashboard Seller</h1>
+
+<p>Hola, <strong>{{ user.name }}</strong> ({{ user.role }})</p>
+
+<h2>Mis productos</h2>
+{% if products %}
+    <ul>
+        {% for p in products %}
+            <li>
+                <strong>{{ p.name }}</strong> - {{ p.price }} UPBolis
+                (stock: {{ p.stock }})
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No tienes productos aún.</p>
+{% endif %}
+{% endblock %}
