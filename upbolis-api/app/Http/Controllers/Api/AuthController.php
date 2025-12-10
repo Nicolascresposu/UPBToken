@@ -50,10 +50,14 @@ class AuthController extends Controller
 
         $user = User::where('email', $data['email'])->first();
 
+        // dd([
+        //     'user'        => $user,
+        //     'password_ok' => $user ? Hash::check($data['password'], $user->password) : null,
+        // ]);
         if (! $user || ! Hash::check($data['password'], $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Credenciales incorrectas.'],
-            ]);
+            return response()->json([
+                'message' => 'Invalid credentials.',
+            ], 401);
         }
 
         $token = $user->createToken('upbolis-api')->plainTextToken;
