@@ -1,227 +1,15 @@
-# import requests
-# from django.conf import settings
-# from django.shortcuts import render, redirect
-# from django.contrib import messages
-# from .utils import api_login_required, role_required
-
-# API_BASE = settings.API_BASE_URL
-
-
-# def redirect_to_login(request):
-#     return redirect('login')
-
-
-# def login_view(request):
-#     # GET: mostrar formulario
-#     if request.method == 'GET':
-#         if request.session.get('api_token') and request.session.get('api_user'):
-#             return redirect('dashboard')
-#         return render(request, 'login.html')
-
-#     # POST: procesar login contra Laravel
-#     email = request.POST.get('email')
-#     password = request.POST.get('password')
-
-#     try:
-#         resp = requests.post(f"{API_BASE}/auth/login", json={
-#             "email": email,
-#             "password": password,
-#         })
-#     except Exception as e:
-#         messages.error(request, f"Error al conectar con la API: {e}")
-#         return render(request, 'login.html', status=500)
-
-#     if resp.status_code != 200:
-#         data = {}
-#         try:
-#             data = resp.json()
-#         except Exception:
-#             pass
-#         msg = data.get('message', 'Credenciales inválidas o error en la API.')
-#         messages.error(request, msg)
-#         return render(request, 'login.html', status=401)
-
-#     data = resp.json()
-#     token = data.get('token')
-#     user = data.get('user')
-
-#     if not token or not user:
-#         messages.error(request, 'Respuesta inválida de la API de login.')
-#         return render(request, 'login.html', status=500)
-
-#     # Guardar en sesión
-#     request.session['api_token'] = token
-#     request.session['api_user'] = user
-
-#     role = str(user.get('role', '')).lower()
-#     if role == 'admin':
-#         return redirect('admin_dashboard')
-#     elif role == 'seller':
-#         return redirect('seller_dashboard')
-#     else:
-#         return redirect('buyer_dashboard')
-
-
-# def logout_view(request):
-#     token = request.session.get('api_token')
-#     if token:
-#         try:
-#             requests.post(
-#                 f"{API_BASE}/auth/logout",
-#                 headers={"Authorization": f"Bearer {token}"}
-#             )
-#         except Exception:
-#             pass  # ignoramos error
-
-#     request.session.flush()
-#     return redirect('login')
-
-
-# @api_login_required
-# def dashboard_view(request):
-#     user = request.session.get('api_user', {})
-#     role = str(user.get('role', '')).lower()
-
-#     if role == 'admin':
-#         return redirect('admin_dashboard')
-#     elif role == 'seller':
-#         return redirect('seller_dashboard')
-#     else:
-#         return redirect('buyer_dashboard')
-
-
-# @api_login_required
-# @role_required('buyer')
-# def buyer_dashboard(request):
-#     token = request.session.get('api_token')
-#     headers = {"Authorization": f"Bearer {token}"}
-
-#     # Wallet
-#     wallet = None
-#     try:
-#         r = requests.get(f"{API_BASE}/wallet", headers=headers)
-#         if r.status_code == 200:
-#             wallet = r.json().get('wallet')
-#     except Exception:
-#         wallet = None
-
-#     # Productos
-#     products = []
-#     try:
-#         r = requests.get(f"{API_BASE}/products", headers=headers)
-#         if r.status_code == 200:
-#             products = r.json()
-#     except Exception:
-#         products = []
-
-#     return render(request, 'buyer_dashboard.html', {
-#         'user': request.session.get('api_user'),
-#         'wallet': wallet,
-#         'products': products,
-#     })
-
-
-# @api_login_required
-# @role_required('seller', 'admin')
-# def seller_dashboard(request):
-#     token = request.session.get('api_token')
-#     headers = {"Authorization": f"Bearer {token}"}
-
-#     products = []
-#     try:
-#         r = requests.get(f"{API_BASE}/seller/products", headers=headers)
-#         if r.status_code == 200:
-#             products = r.json()
-#     except Exception:
-#         products = []
-
-#     return render(request, 'seller_dashboard.html', {
-#         'user': request.session.get('api_user'),
-#         'products': products,
-#     })
-
-
-# @api_login_required
-# @role_required('admin')
-# def admin_dashboard(request):
-#     token = request.session.get('api_token')
-#     headers = {"Authorization": f"Bearer {token}"}
-
-#     users = []
-#     try:
-#         # cuando tengas este endpoint creado en Laravel
-#         r = requests.get(f"{API_BASE}/admin/users", headers=headers)
-#         if r.status_code == 200:
-#             users = r.json()
-#     except Exception:
-#         users = []
-
-#     return render(request, 'admin_dashboard.html', {
-#         'user': request.session.get('api_user'),
-#         'users': users,
-#     })
 import requests
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .utils import api_login_required, role_required
+from django.views.decorators.http import require_POST
+
 
 API_BASE = settings.API_BASE_URL
 
-
 def redirect_to_login(request):
     return redirect('login')
-
-
-# def login_view(request):
-#     # GET: mostrar formulario
-#     if request.method == 'GET':
-#         if request.session.get('api_token') and request.session.get('api_user'):
-#             return redirect('dashboard')
-#         return render(request, 'login.html')
-
-#     # POST: procesar login contra Laravel
-#     email = request.POST.get('email')
-#     password = request.POST.get('password')
-
-#     try:
-#         resp = requests.post(f"{API_BASE}/auth/login", json={
-#             "email": email,
-#             "password": password,
-#         })
-#     except Exception as e:
-#         messages.error(request, f"Error al conectar con la API: {e}")
-#         return render(request, 'login.html', status=500)
-
-#     if resp.status_code != 200:
-#         data = {}
-#         try:
-#             data = resp.json()
-#         except Exception:
-#             pass
-#         msg = data.get('message', 'Credenciales inválidas o error en la API.')
-#         messages.error(request, msg)
-#         return render(request, 'login.html', status=401)
-
-#     data = resp.json()
-#     token = data.get('token')
-#     user = data.get('user')
-
-#     if not token or not user:
-#         messages.error(request, 'Respuesta inválida de la API de login.')
-#         return render(request, 'login.html', status=500)
-
-#     # Guardar en sesión
-#     request.session['api_token'] = token
-#     request.session['api_user'] = user
-
-#     role = str(user.get('role', '')).lower()
-#     if role == 'admin':
-#         return redirect('admin_dashboard')
-#     elif role == 'seller':
-#         return redirect('seller_dashboard')
-#     else:
-#         return redirect('buyer_dashboard')
 
 def login_view(request):
     # GET: mostrar formulario
@@ -338,7 +126,7 @@ def register_view(request):
                 # join validation messages
                 errors = data.get('errors')
                 msgs = []
-                for k, v in errors.items():
+                for k, v in errors.items(): # type: ignore (Because it's not really relevant i think)
                     if isinstance(v, list):
                         msgs.extend(v)
                     else:
@@ -472,3 +260,60 @@ def admin_dashboard(request):
         'user': request.session.get('api_user'),
         'users': users,
     })
+
+# Unused
+@api_login_required
+@role_required('admin')
+@require_POST
+def admin_update_user_role(request, user_id):
+    token = request.session.get('api_token')
+    headers = {"Authorization": f"Bearer {token}"}
+
+    new_role = request.POST.get("role")
+
+    try:
+        resp = requests.patch(
+            f"{API_BASE}/admin/users/{user_id}/role",
+            headers=headers,
+            json={"role": new_role},
+        )
+        if resp.status_code not in (200, 204):
+            try:
+                data = resp.json()
+                msg = data.get("message", "No se pudo actualizar el rol.")
+            except Exception:
+                msg = "No se pudo actualizar el rol."
+            messages.error(request, msg)
+        else:
+            messages.success(request, "Rol actualizado correctamente.")
+    except Exception as e:
+        messages.error(request, f"Error al conectar con la API: {e}")
+
+    return redirect("admin_dashboard")
+
+
+@api_login_required
+@role_required('admin')
+@require_POST
+def admin_toggle_user_active(request, user_id):
+    token = request.session.get('api_token')
+    headers = {"Authorization": f"Bearer {token}"}
+
+    try:
+        resp = requests.patch(
+            f"{API_BASE}/admin/users/{user_id}/deactivate",
+            headers=headers,
+        )
+        if resp.status_code not in (200, 204):
+            try:
+                data = resp.json()
+                msg = data.get("message", "No se pudo cambiar el estado del usuario.")
+            except Exception:
+                msg = "No se pudo cambiar el estado del usuario."
+            messages.error(request, msg)
+        else:
+            messages.success(request, "Estado del usuario actualizado.")
+    except Exception as e:
+        messages.error(request, f"Error al conectar con la API: {e}")
+
+    return redirect("admin_dashboard")

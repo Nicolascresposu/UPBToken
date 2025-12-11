@@ -1,28 +1,221 @@
 {% extends "base.html" %}
-{% block title %}Admin - UPBolis{% endblock %}
+{% load static %}
+
+{% block title %}Panel de administrador · UPBolis{% endblock %}
 
 {% block content %}
-<h1>Dashboard Admin</h1>
+<div class="dashboard">
 
-<p>Hola, <strong>{{ user.name }}</strong> ({{ user.role }})</p>
+    <header class="dashboard__header">
+        <div>
+            <h1 class="dashboard__title">Panel de administrador</h1>
+            <p class="dashboard__subtitle">
+                Controla usuarios, wallets, productos, órdenes y transacciones de toda la plataforma.
+            </p>
+        </div>
+        <div class="dashboard__header-actions">
+            <a href="{% url 'logout' %}" class="btn btn-secondary">Cerrar sesión</a>
+        </div>
+    </header>
 
-<h2>Usuarios (ejemplo)</h2>
-{% if users %}
-    <ul id="usersList">
-        {% for u in users %}
-            <li id="user-{{ u.id }}">
-                {{ u.name }} - {{ u.email }} - <span class="user-role">{{ u.role }}</span>
-                {% if u.role != 'seller' %}
-                    <button class="btn btn-primary promote-user" data-user-id="{{ u.id }}" style="margin-left:10px;">Hacer Vendedor</button>
-                {% else %}
-                    <button class="btn btn-warning demote-user" data-user-id="{{ u.id }}" style="margin-left:10px;">Quitar Rol Vendedor</button>
-                {% endif %}
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No hay usuarios o el endpoint aún no está implementado.</p>
-{% endif %}
+    <!-- KPIs -->
+    <section class="dashboard-grid dashboard-grid--4">
+        <article class="stat-card">
+            <div class="stat-card__label">Usuarios totales</div>
+            <div class="stat-card__value">{{ stats.total_users|default:"0" }}</div>
+            <p class="stat-card__hint">Compradores, vendedores y admins.</p>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-card__label">Sellers activos</div>
+            <div class="stat-card__value">{{ stats.total_sellers|default:"0" }}</div>
+            <p class="stat-card__hint">Con al menos un producto activo.</p>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-card__label">Órdenes totales</div>
+            <div class="stat-card__value">{{ stats.total_orders|default:"0" }}</div>
+            <p class="stat-card__hint">Desde el inicio de la plataforma.</p>
+        </article>
+
+        <article class="stat-card">
+            <div class="stat-card__label">Volumen transado</div>
+            <div class="stat-card__value">
+                {{ stats.total_volume|default:"0.00" }} <span class="stat-card__tag">UPBolis</span>
+            </div>
+            <p class="stat-card__hint">Suma de todas las órdenes pagadas.</p>
+        </article>
+    </section>
+
+    <div class="dashboard-columns">
+
+        <!-- ==== GESTIÓN DE USUARIOS ==== -->
+        <section class="panel">
+            <header class="panel__header">
+                <div>
+                    <h2 class="panel__title">Gestión de usuarios</h2>
+                    <p class="panel__subtitle">
+                        Cambia roles, activa/desactiva cuentas y revisa el estado general de los usuarios.
+                    </p>
+                </div>
+                <a href="#" class="panel__link">Ver más filtros</a>
+            </header>
+
+            <div class="table-wrapper table-wrapper--compact">
+                <table class="table table--compact">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Correo</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th class="table__th--right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.name }}</td>
+                            <td>{{ user.email }}</td>
+
+                            <!-- ===== NUEVA LÓGICA DE ROL: HACER / QUITAR VENDEDOR ===== -->
+                            <td>
+                                {% if user.role == "seller" %}
+                                        {% csrf_token %}
+                                        <span class="chip chip--active">Seller</span>
+                                        <button type="submit" class="btn btn-small btn-danger demote-user" data-user-id="{{ user.id }}">
+                                            Quitar rol vendedor
+                                        </button>
+                                {% else %}
+                                        <span class="chip chip--inactive">
+                                            {{ user.role|default:"Buyer"|title }}
+                                        </span>
+                                        <button type="submit" class="btn btn-small btn-primary promote-user" data-user-id="{{ user.id }}">
+                                            Hacer vendedor
+                                        </button>
+                                {% endif %}
+                            </td>
+                            <!-- ===== FIN LÓGICA DE ROL ===== -->
+
+                            <!-- <td>
+                                <span class="chip chip--{{ user.is_active|yesno:'active,inactive' }}">
+                                    {{ user.is_active|yesno:'Activo,Inactivo' }}
+                                </span>
+                            </td> -->
+                            <!-- <td class="table__td--right">
+                                <form method="post"
+                                      action="{% url 'admin_toggle_user_active' user.id %}"
+                                      class="inline-form">
+                                    {% csrf_token %}
+                                    {% if user.is_active %}
+                                        <button type="submit" class="btn btn-small btn-danger">
+                                            Desactivar
+                                        </button>
+                                    {% else %}
+                                        <button type="submit" class="btn btn-small btn-primary">
+                                            Activar
+                                        </button>
+                                    {% endif %}
+                                </form>
+                            </td> -->
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="table-empty">
+                                No hay usuarios registrados aún.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ==== ÓRDENES Y TRANSACCIONES ==== -->
+        <section class="panel">
+            <header class="panel__header">
+                <div>
+                    <h2 class="panel__title">Órdenes recientes</h2>
+                    <p class="panel__subtitle">
+                        Las últimas operaciones de compra realizadas en la plataforma.
+                    </p>
+                </div>
+                <a href="#" class="panel__link">Ver todas</a>
+            </header>
+
+            <div class="table-wrapper table-wrapper--compact">
+                <table class="table table--compact">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Buyer</th>
+                            <th>Estado</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>{{ order.created_at }}</td>
+                            <td>{{ order.buyer_name|default:"—" }}</td>
+                            <td>
+                                <span class="chip chip--{{ order.status }}">
+                                    {{ order.status|title }}
+                                </span>
+                            </td>
+                            <td>{{ order.total }} UPB</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="table-empty">
+                                No hay órdenes registradas aún.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 class="panel__subheading panel__subheading--mt">Transacciones recientes</h3>
+
+            <div class="table-wrapper table-wrapper--compact">
+                <table class="table table--compact">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                            <th>Tipo</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in transactions %}
+                        <tr>
+                            <td>{{ tx.created_at }}</td>
+                            <td>{{ tx.user_name|default:"—" }}</td>
+                            <td>{{ tx.type|title }}</td>
+                            <td class="table__td--amount {% if tx.amount > 0 %}amount--positive{% elif tx.amount < 0 %}amount--negative{% endif %}">
+                                {{ tx.amount }} UPB
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="table-empty">
+                                Aún no hay transacciones registradas.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+</div>
+
 
 <script>
     const adminToken = localStorage.getItem('api_token');
@@ -137,4 +330,5 @@
         });
     });
 </script>
+
 {% endblock %}

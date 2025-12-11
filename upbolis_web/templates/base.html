@@ -50,12 +50,12 @@
 </div>
 
 <!-- Script para guardar el token en localStorage después de login -->
-<script>
-    // Si tenemos token en session, guardarlo en localStorage
-    {% if request.session.api_token %}
+{% if request.session.api_token %}
+    <script>
+        // Si tenemos token en session, guardarlo en localStorage
         localStorage.setItem('api_token', '{{ request.session.api_token }}');
-    {% endif %}
-</script>
+    </script>
+{% endif %}
 </body>
 </html>
 
