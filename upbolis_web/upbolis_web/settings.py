@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-j4)sp=v%lzu%)&7ck=putcq-^v1#-k*xws@_dm)alko3c@jp1c
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['gaelarianafernandomiguel.nicolascresposu.com','api.gaelarianafernandomiguel.nicolascresposu.com']
 
 
 # Application definition
@@ -118,8 +118,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
-API_BASE_URL = "http://127.0.0.1:8000/api"
+# API_BASE = "http://api.gaelarianafernandomiguel.nicolascresposu.com/api"
+API_BASE_URL = "http://api.gaelarianafernandomiguel.nicolascresposu.com/api"
