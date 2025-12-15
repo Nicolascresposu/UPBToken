@@ -70,10 +70,9 @@ Tablas existentes:
 - `transactions` - Historial de movimientos
 
 ### 5. **Datos de Prueba**
-Se han creado usuarios y productos de prueba mediante seeders (por favor no entres en el sitio real si no sos admin por favor por favorcito 🥺🥺🥺🥺🥺🥺):
+Se han creado usuarios y productos de prueba mediante seeders: 
 
 **Usuarios:**
-- Admin: `admin@upbolis.com` / `(La contraseña de admin es secreta)`
 - Seller: `seller@upbolis.com` / `Seller1234`
 - Comprador: Puedes registrarte con cualquier email
 
