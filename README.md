@@ -73,7 +73,7 @@ Tablas existentes:
 Se han creado usuarios y productos de prueba mediante seeders (por favor no entres en el sitio real si no sos admin por favor por favorcito 🥺🥺🥺🥺🥺🥺):
 
 **Usuarios:**
-- Admin: `admin@upbolis.com` / `Admin1234`
+- Admin: `admin@upbolis.com` / `(La contraseña de admin es secreta)`
 - Seller: `seller@upbolis.com` / `Seller1234`
 - Comprador: Puedes registrarte con cualquier email
 
