@@ -1,1 +1,16 @@
 IMPLEMENTATION_DETAILS.md
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django / local
+*.sqlite3
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
