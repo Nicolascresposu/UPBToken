@@ -1,27 +1,30 @@
-
 from django.urls import path
 from . import views
 
 urlpatterns = [
     path('', views.redirect_to_login, name='home'),
 
+    # AUTH
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
 
+    # DASHBOARDS
     path('dashboard/', views.dashboard_view, name='dashboard'),
     path('buyer/', views.buyer_dashboard, name='buyer_dashboard'),
     path('seller/', views.seller_dashboard, name='seller_dashboard'),
     path('admin-panel/', views.admin_dashboard, name='admin_dashboard'),
-    # Unused
-    path(
-        'admin/users/<int:user_id>/role/',
-        views.admin_update_user_role,
-        name='admin_update_user_role',
-    ),
-    path(
-        'admin/users/<int:user_id>/toggle-active/',
-        views.admin_toggle_user_active,
-        name='admin_toggle_user_active',
-    ),
+
+    # SELLER
+    path('seller/products/<int:product_id>/delete/', views.seller_delete_product, name='seller_delete_product'),
+
+    # ADMIN
+    path('admin-panel/users/<int:user_id>/role/', views.admin_update_user_role, name='admin_update_user_role'),
+    path('admin-panel/users/<int:user_id>/toggle-active/', views.admin_toggle_user_active, name='admin_toggle_user_active'),
+    path('admin-panel/users/create/', views.admin_create_user, name='admin_create_user'),
+    path('admin-panel/users/topup/', views.admin_topup_tokens, name='admin_topup_tokens'),
+    path('admin-panel/users/<int:user_id>/manage/', views.admin_manage_user, name='admin_manage_user'),
+
+    # WALLET
+    path('wallet/transfer/', views.wallet_transfer, name='wallet_transfer'),
 ]

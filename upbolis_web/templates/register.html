@@ -1,47 +1,94 @@
 {% extends "base.html" %}
-{% block title %}Register - UPBolis{% endblock %}
+{% load static %}
+
+{% block title %}Registro · UPBolis{% endblock %}
 
 {% block content %}
-<div class="register-layout">
-    <div class="register-box">
-        <h2>Crear cuenta</h2>
-        <p>Regístrate como comprador para empezar a comprar productos.</p>
+<div class="auth-card-single page-fade" data-tilt-container>
 
-        <form method="post" class="form-grid">
-            {% csrf_token %}
+  <header class="auth-card-single__header auth-card-single__header--center">
+    <span class="top-card__eyebrow">Crear cuenta</span>
+    <h1 class="auth-card-single__title">Registro</h1>
+    <p class="auth-card-single__subtitle">Solo correos <b>@upbolis.com</b>.</p>
+  </header>
 
-            <div class="form-field">
-                <label>Nombre completo</label>
-                <input type="text" name="name" placeholder="Tu nombre" required maxlength="255" />
-            </div>
+  <div class="auth-body">
+    {% if messages %}
+      {% for message in messages %}
+        {% if 'register' in message.tags %}
+          <div class="{% if 'success' in message.tags %}alert-success{% elif 'warning' in message.tags %}alert-warning{% else %}alert-error{% endif %}">
+            {{ message }}
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
 
-            <div class="form-field">
-                <label>Correo electrónico</label>
-                <input type="email" name="email" placeholder="tucorreo@upbolis.com" required />
-            </div>
+    <form method="post" action="{% url 'register' %}" class="auth-form">
+      {% csrf_token %}
 
-            <div class="form-field">
-                <label>Contraseña</label>
-                <input type="password" name="password" placeholder="••••••••" required minlength="6" />
-            </div>
+      <div class="field" data-field>
+        <label for="name">Nombre</label>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          autocomplete="name"
+          required
+          value="{{ request.POST.name|default:'' }}"
+        />
+      </div>
 
-            <div class="form-field">
-                <label>Confirmar contraseña</label>
-                <input type="password" name="password_confirmation" placeholder="••••••••" required minlength="6" />
-            </div>
+      <div class="field" data-field>
+        <label for="email">Correo</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          placeholder="usuario@upbolis.com"
+          autocomplete="email"
+          required
+          pattern="^[A-Za-z0-9._%+\-]+@upbolis\.com$"
+          title="Solo se permiten correos @upbolis.com"
+          value="{{ request.POST.email|default:'' }}"
+        />
+        <small class="field__hint">Debe terminar en <b>@upbolis.com</b></small>
+      </div>
 
-            <div>
-                <button type="submit" class="btn btn-primary">Crear cuenta</button>
-                <a href="{% url 'login' %}" class="btn btn-ghost">Volver a login</a>
-            </div>
-        </form>
-    </div>
+      <div class="field" data-field>
+        <label for="password">Contraseña</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          placeholder="Mínimo 8 caracteres"
+          autocomplete="new-password"
+          required
+        />
+      </div>
+
+      <div class="field" data-field>
+        <label for="password_confirmation">Confirmar</label>
+        <input
+          id="password_confirmation"
+          name="password_confirmation"
+          type="password"
+          placeholder="Repite la contraseña"
+          autocomplete="new-password"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary btn--full" data-ripple>
+        Crear cuenta
+      </button>
+
+      <div class="auth-options">
+        <span></span>
+        <a class="auth-link js-page-transition" href="{% url 'login' %}">
+          ¿Ya tienes cuenta? Inicia sesión
+        </a>
+      </div>
+    </form>
+  </div>
 </div>
-
-<style>
-.register-layout { padding: 30px; display:flex; justify-content:center; }
-.register-box { width: 420px; background:#fff; padding:20px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.08);} 
-.form-field { margin-bottom:12px; }
-.form-field input { width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; }
-</style>
 {% endblock %}

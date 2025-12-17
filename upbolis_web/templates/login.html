@@ -1,55 +1,67 @@
 {% extends "base.html" %}
-{% block title %}Login - UPBolis{% endblock %}
+{% load static %}
+
+{% block title %}Iniciar sesión · UPBolis{% endblock %}
 
 {% block content %}
-<div class="login-layout">
+<div class="auth-card-single page-fade" data-tilt-container>
 
-    <div class="login-hero">
-        <div class="login-badge">
-            <span>🔐</span>
-            <span>Pasarela UPBolis segura</span>
-        </div>
-        <h1 class="login-hero-title">
-            Administra tus <span class="login-hero-highlight">UPBolis</span>
-        </h1>
-        <p class="login-hero-text">
-            Inicia sesión para enviar, recibir y gestionar pagos con la moneda digital UPBolis.
-            Conecta tus compras, videojuegos, pedidos y más desde un solo panel.
-        </p>
-    </div>
+    <header class="auth-card-single__header auth-card-single__header--center">
+        <span class="top-card__eyebrow">Acceso seguro</span>
+        <h1 class="auth-card-single__title">Iniciar sesión</h1>
+        <p class="auth-card-single__subtitle">Accede con tu cuenta UPBolis.</p>
+    </header>
 
-    <div class="login-form-box">
-        <h2 class="section-title">
-            <span class="section-title-pill">1</span>
-            <span>Accede a tu cuenta</span>
-        </h2>
-        <p class="page-subtitle">
-            Usa el correo y contraseña que registraste en la plataforma UPBolis.
-        </p>
+    <div class="auth-body">
+        {% if messages %}
+  {% for message in messages %}
+    {% if 'login' in message.tags %}
+      <div class="{% if 'success' in message.tags %}alert-success{% elif 'warning' in message.tags %}alert-warning{% else %}alert-error{% endif %}">
+        {{ message }}
+      </div>
+    {% endif %}
+  {% endfor %}
+{% endif %}
 
-        <form method="post" class="form-grid">
+
+        <form method="post" action="{% url 'login' %}" class="auth-form">
             {% csrf_token %}
 
-            <div class="form-field">
-                <label>Correo electrónico</label>
-                <input type="email" name="email" placeholder="tucorreo@upbolis.com" required />
+            <div class="field" data-field>
+                <label for="email">Correo</label>
+                <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="usuario@upbolis.com"
+                    autocomplete="email"
+                    required
+                />
             </div>
 
-            <div class="form-field">
-                <label>Contraseña</label>
-                <input type="password" name="password" placeholder="••••••••" required />
+            <div class="field" data-field>
+                <label for="password">Contraseña</label>
+                <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="••••••••"
+                    autocomplete="current-password"
+                    required
+                />
             </div>
 
-            <div>
-                <button type="submit" class="btn btn-primary">
-                    Entrar a UPBolis
-                </button>
-            </div>
-            <div style="margin-top:12px;">
-                <a href="{% url 'register' %}" class="btn btn-ghost">¿No tienes cuenta? Regístrate</a>
+            <button type="submit" class="btn btn-primary btn--full" data-ripple>
+                Entrar
+            </button>
+
+            <div class="auth-options">
+                <span></span>
+                <a class="auth-link js-page-transition" href="{% url 'register' %}">
+                    ¿No tienes cuenta? Regístrate
+                </a>
             </div>
         </form>
     </div>
-
 </div>
 {% endblock %}

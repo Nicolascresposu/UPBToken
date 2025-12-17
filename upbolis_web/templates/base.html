@@ -2,60 +2,48 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <title>{% block title %}UPBolis Web{% endblock %}</title>
-
+    <meta charset="UTF-8">
+    <title>
+        {% block title %}
+            UPBolis · Plataforma de pagos digitales
+        {% endblock %}
+    </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#020202">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-
-    {% block extra_head %}{% endblock %}
 </head>
-<body>
-<div class="app-shell">
-    <nav class="app-navbar">
-        <div class="app-brand">
-            <div class="app-logo"></div>
-            <div class="app-title">UPBolis</div>
+<body class="upb-body">
+
+<!-- Overlay para transición -->
+<div id="page-transition-overlay" class="page-overlay" aria-hidden="true"></div>
+
+<div class="layout-frame">
+
+    <!-- CABECERA: TARJETA DE MARCA -->
+    <header class="top-card">
+        <div class="top-card__brand">
+            <div class="brand-orbit">
+                <div class="brand-orbit__token"></div>
+                <div class="brand-orbit__ring"></div>
+            </div>
+            <div class="top-card__text">
+                <span class="top-card__title-word">UPBolis</span>
+            </div>
         </div>
-        <div class="app-user-area">
-            {% if request.session.api_user %}
-                <span>
-                    {{ request.session.api_user.name }}
-                </span>
-                <span class="app-user-role-pill">
-                    {{ request.session.api_user.role|default:"" }}
-                </span>
-                <form action="{% url 'logout' %}" method="post" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-ghost">Salir</button>
-                </form>
-            {% else %}
-                <a href="{% url 'login' %}" class="btn btn-ghost">Entrar</a>
-                <a href="{% url 'register' %}" class="btn btn-primary" style="margin-left:8px;">Regístrate</a>
-            {% endif %}
-        </div>
-    </nav>
+    </header>
 
-    <main class="app-main">
-        <section class="app-container">
-
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-error">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-
-            {% block content %}{% endblock %}
-        </section>
+    <!-- CONTENIDO CENTRAL -->
+    <main class="frame-main">
+        {% block content %}{% endblock %}
     </main>
+
+    <!-- FOOTER -->
+    <footer class="frame-footer">
+        © UPBolis · Plataforma de pagos para ecosistema universitario.
+    </footer>
 </div>
 
-<!-- Script para guardar el token en localStorage después de login -->
-{% if request.session.api_token %}
-    <script>
-        // Si tenemos token en session, guardarlo en localStorage
-        localStorage.setItem('api_token', '{{ request.session.api_token }}');
-    </script>
-{% endif %}
+<script src="{% static 'js/app.js' %}"></script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>
-

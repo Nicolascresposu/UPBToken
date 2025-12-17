@@ -6,329 +6,443 @@
 {% block content %}
 <div class="dashboard">
 
-    <header class="dashboard__header">
+  <!-- HEADER -->
+  <header class="dashboard__header">
+    <div>
+      <h1 class="dashboard__title">Panel de administrador</h1>
+      {% if counts %}
+
+      {% endif %}
+    </div>
+
+    <div class="dashboard__header-actions">
+      <button type="button" class="btn btn-outline" data-open-modal="modal-create-user">
+        + Nuevo usuario
+      </button>
+
+      <button type="button" class="btn btn-accent" data-open-modal="modal-topup">
+        Cargar UPBolis
+      </button>
+
+      <a href="{% url 'logout' %}" class="btn btn-ghost btn-ghost--danger">
+        Cerrar sesión
+      </a>
+    </div>
+  </header>
+
+  <!-- KPIs -->
+  <section class="dashboard-grid dashboard-grid--4">
+    <article class="stat-card">
+      <div class="stat-card__label">Usuarios totales</div>
+      <div class="stat-card__value">{{ stats.total_users|default:"0" }}</div>
+      <p class="stat-card__hint">Compradores, vendedores y administradores.</p>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-card__label">Vendedores activos</div>
+      <div class="stat-card__value">{{ stats.total_sellers|default:"0" }}</div>
+      <p class="stat-card__hint">Usuarios con rol vendedor.</p>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-card__label">Órdenes totales</div>
+      <div class="stat-card__value">{{ stats.total_orders|default:"0" }}</div>
+      <p class="stat-card__hint">Desde el inicio de la plataforma.</p>
+    </article>
+
+    <article class="stat-card">
+      <div class="stat-card__label">Volumen transado</div>
+      <div class="stat-card__value">UPBolis {{ stats.total_volume|default:"0.00" }}</div>
+      <p class="stat-card__hint">Suma de órdenes pagadas.</p>
+    </article>
+  </section>
+
+  <!-- ====== LAYOUT ====== -->
+  <div class="admin-layout">
+
+    <!-- ==== GESTIÓN DE USUARIOS (ARRIBA) ==== -->
+    <section class="panel panel--tall">
+      <header class="panel__header">
         <div>
-            <h1 class="dashboard__title">Panel de administrador</h1>
-            <p class="dashboard__subtitle">
-                Controla usuarios, wallets, productos, órdenes y transacciones de toda la plataforma.
-            </p>
+          <h2 class="panel__title">Gestión de usuarios</h2>
         </div>
-        <div class="dashboard__header-actions">
-            <a href="{% url 'logout' %}" class="btn btn-secondary">Cerrar sesión</a>
+        <div class="panel__tools">
+          <div class="search-box">
+            <input type="text" id="user-search" class="search-box__input" placeholder="Buscar por nombre o correo...">
+            <button type="button" class="search-box__button" aria-label="Buscar"></button>
+          </div>
         </div>
-    </header>
+      </header>
 
-    <!-- KPIs -->
-    <section class="dashboard-grid dashboard-grid--4">
-        <article class="stat-card">
-            <div class="stat-card__label">Usuarios totales</div>
-            <div class="stat-card__value">{{ stats.total_users|default:"0" }}</div>
-            <p class="stat-card__hint">Compradores, vendedores y admins.</p>
-        </article>
+      <div class="table-wrapper table-wrapper--compact table-wrapper--scroll">
+        <table class="table table--compact">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Rol</th>
+              <th class="table__th--right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+              <tr data-user-row data-search-text="{{ user.name|default_if_none:'' }} {{ user.email|default_if_none:'' }}">
+                <td class="table-main-text">{{ user.name|default:"—" }}</td>
+                <td class="table-sub-text">{{ user.email|default:"—" }}</td>
 
-        <article class="stat-card">
-            <div class="stat-card__label">Sellers activos</div>
-            <div class="stat-card__value">{{ stats.total_sellers|default:"0" }}</div>
-            <p class="stat-card__hint">Con al menos un producto activo.</p>
-        </article>
+                <td>
+                  {% with r=user.role|default:"buyer"|lower %}
+                    {% if r == "admin" %}Administrador{% elif r == "seller" %}Vendedor{% else %}Comprador{% endif %}
+                  {% endwith %}
+                </td>
 
-        <article class="stat-card">
-            <div class="stat-card__label">Órdenes totales</div>
-            <div class="stat-card__value">{{ stats.total_orders|default:"0" }}</div>
-            <p class="stat-card__hint">Desde el inicio de la plataforma.</p>
-        </article>
-
-        <article class="stat-card">
-            <div class="stat-card__label">Volumen transado</div>
-            <div class="stat-card__value">
-                {{ stats.total_volume|default:"0.00" }} <span class="stat-card__tag">UPBolis</span>
-            </div>
-            <p class="stat-card__hint">Suma de todas las órdenes pagadas.</p>
-        </article>
+                <td class="table__td--right">
+                  <div class="table-actions">
+                    <button
+                      type="button"
+                      class="btn btn-small btn-outline"
+                      data-open-modal="modal-manage-user"
+                      data-user-id="{{ user.id }}"
+                      data-user-name="{{ user.name }}"
+                      data-user-email="{{ user.email }}"
+                      data-user-role="{{ user.role }}"
+                    >
+                      Gestionar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="4" class="table-empty">No hay usuarios registrados aún.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </section>
 
-    <div class="dashboard-columns">
+    <!-- ==== ABAJO: ÓRDENES + TRANSACCIONES ==== -->
+    <div class="admin-bottom-grid">
 
-        <!-- ==== GESTIÓN DE USUARIOS ==== -->
-        <section class="panel">
-            <header class="panel__header">
-                <div>
-                    <h2 class="panel__title">Gestión de usuarios</h2>
-                    <p class="panel__subtitle">
-                        Cambia roles, activa/desactiva cuentas y revisa el estado general de los usuarios.
-                    </p>
-                </div>
-                <a href="#" class="panel__link">Ver más filtros</a>
-            </header>
+      <!-- ÓRDENES -->
+      <section class="panel">
+        <header class="panel__header">
+          <div>
+            <h2 class="panel__title">Órdenes recientes</h2>
+          </div>
+        </header>
 
-            <div class="table-wrapper table-wrapper--compact">
-                <table class="table table--compact">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Correo</th>
-                            <th>Rol</th>
-                            <th>Estado</th>
-                            <th class="table__th--right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ user.name }}</td>
-                            <td>{{ user.email }}</td>
+        <div class="table-wrapper table-wrapper--compact table-wrapper--scroll">
+          <table class="table table--compact">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Fecha</th>
+                <th>Comprador</th>
+                <th>Estado</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in orders %}
+                <tr>
+                  <td>#{{ order.id|default:"—" }}</td>
+                  <td>{{ order.created_at_display|default:"—" }}</td>
+                  <td>
+                    <div class="table-main-text">{{ order.buyer_display|default:"—" }}</div>
+                    {% if order.buyer_sub %}
+                      <div class="table-sub-text">{{ order.buyer_sub }}</div>
+                    {% endif %}
+                  </td>
 
-                            <!-- ===== NUEVA LÓGICA DE ROL: HACER / QUITAR VENDEDOR ===== -->
-                            <td>
-                                {% if user.role == "seller" %}
-                                        {% csrf_token %}
-                                        <span class="chip chip--active">Seller</span>
-                                        <button type="submit" class="btn btn-small btn-danger demote-user" data-user-id="{{ user.id }}">
-                                            Quitar rol vendedor
-                                        </button>
-                                {% else %}
-                                        <span class="chip chip--inactive">
-                                            {{ user.role|default:"Buyer"|title }}
-                                        </span>
-                                        <button type="submit" class="btn btn-small btn-primary promote-user" data-user-id="{{ user.id }}">
-                                            Hacer vendedor
-                                        </button>
-                                {% endif %}
-                            </td>
-                            <!-- ===== FIN LÓGICA DE ROL ===== -->
+                  <td>
+                    {% with st=order.status_norm|default:"pending" %}
+                      {% if st == "paid" %}
+                        <span class="chip chip--paid">Pagado</span>
+                      {% elif st == "pending" %}
+                        <span class="chip chip--pending">Pendiente</span>
+                      {% elif st == "cancelled" %}
+                        <span class="chip chip--cancelled">Cancelado</span>
+                      {% else %}
+                        <span class="chip chip--pending">{{ st|title }}</span>
+                      {% endif %}
+                    {% endwith %}
+                  </td>
 
-                            <!-- <td>
-                                <span class="chip chip--{{ user.is_active|yesno:'active,inactive' }}">
-                                    {{ user.is_active|yesno:'Activo,Inactivo' }}
-                                </span>
-                            </td> -->
-                            <!-- <td class="table__td--right">
-                                <form method="post"
-                                      action="{% url 'admin_toggle_user_active' user.id %}"
-                                      class="inline-form">
-                                    {% csrf_token %}
-                                    {% if user.is_active %}
-                                        <button type="submit" class="btn btn-small btn-danger">
-                                            Desactivar
-                                        </button>
-                                    {% else %}
-                                        <button type="submit" class="btn btn-small btn-primary">
-                                            Activar
-                                        </button>
-                                    {% endif %}
-                                </form>
-                            </td> -->
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="table-empty">
-                                No hay usuarios registrados aún.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                  <td>UPBolis {{ order.total_display|default:"0.00" }}</td>
+                </tr>
+              {% empty %}
+                <tr><td colspan="5" class="table-empty">No hay órdenes registradas aún.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-        <!-- ==== ÓRDENES Y TRANSACCIONES ==== -->
-        <section class="panel">
-            <header class="panel__header">
-                <div>
-                    <h2 class="panel__title">Órdenes recientes</h2>
-                    <p class="panel__subtitle">
-                        Las últimas operaciones de compra realizadas en la plataforma.
-                    </p>
-                </div>
-                <a href="#" class="panel__link">Ver todas</a>
-            </header>
+      <!-- TRANSACCIONES -->
+<section class="panel">
+  <header class="panel__header">
+    <div>
+      <h2 class="panel__title">Transacciones recientes</h2>
+    </div>
+  </header>
 
-            <div class="table-wrapper table-wrapper--compact">
-                <table class="table table--compact">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Fecha</th>
-                            <th>Buyer</th>
-                            <th>Estado</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for order in orders %}
-                        <tr>
-                            <td>#{{ order.id }}</td>
-                            <td>{{ order.created_at }}</td>
-                            <td>{{ order.buyer_name|default:"—" }}</td>
-                            <td>
-                                <span class="chip chip--{{ order.status }}">
-                                    {{ order.status|title }}
-                                </span>
-                            </td>
-                            <td>{{ order.total }} UPB</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="table-empty">
-                                No hay órdenes registradas aún.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+  <div class="table-wrapper table-wrapper--compact table-wrapper--scroll">
+    <table class="table table--compact">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Usuario</th>
+          <th>Tipo</th>
+          <th class="table__th--right">Monto</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tx in transactions %}
+          <tr>
+            <td>{{ tx.created_at_display|default:"—" }}</td>
 
-            <h3 class="panel__subheading panel__subheading--mt">Transacciones recientes</h3>
+            <td>
+              <div class="table-main-text">{{ tx.user_display|default:"—" }}</div>
+              {% if tx.user_sub %}
+                <div class="table-sub-text">{{ tx.user_sub }}</div>
+              {% endif %}
+            </td>
 
-            <div class="table-wrapper table-wrapper--compact">
-                <table class="table table--compact">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Usuario</th>
-                            <th>Tipo</th>
-                            <th>Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for tx in transactions %}
-                        <tr>
-                            <td>{{ tx.created_at }}</td>
-                            <td>{{ tx.user_name|default:"—" }}</td>
-                            <td>{{ tx.type|title }}</td>
-                            <td class="table__td--amount {% if tx.amount > 0 %}amount--positive{% elif tx.amount < 0 %}amount--negative{% endif %}">
-                                {{ tx.amount }} UPB
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="table-empty">
-                                Aún no hay transacciones registradas.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            <td>{{ tx.type_label|default:"—" }}</td>
+
+            <td class="table__td--right">
+              UPBolis {{ tx.amount_display|default:"0.00" }}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="table-empty">Aún no hay transacciones registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
 
     </div>
+  </div>
 
 </div>
 
+<!-- ========== MODAL: CREAR USUARIO ========== -->
+<div class="modal" id="modal-create-user">
+  <div class="modal__backdrop"></div>
+  <div class="modal__dialog">
+    <header class="modal__header">
+      <h3 class="modal__title">Crear nuevo usuario</h3>
+      <button type="button" class="modal__close" data-close-modal>&times;</button>
+    </header>
+
+    <form method="post" action="{% url 'admin_create_user' %}">
+      {% csrf_token %}
+      <div class="modal__body">
+        <div class="form-grid">
+          <div class="field field--full">
+            <label>Nombre completo</label>
+            <input type="text" name="name" required>
+          </div>
+
+          <div class="field field--full">
+            <label>Correo electrónico</label>
+            <input type="email" name="email" required>
+          </div>
+
+          <div class="field">
+            <label>Rol</label>
+            <select name="role" class="select-small" required>
+              <option value="buyer">Comprador</option>
+              <option value="seller">Vendedor</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Saldo inicial (UPBolis)</label>
+            <input type="number" name="initial_balance" min="0" step="0.01" value="0">
+          </div>
+
+          <div class="field">
+            <label>Contraseña</label>
+            <input type="password" name="password" placeholder="Opcional: dejar vacío para usar una por defecto">
+          </div>
+
+          <div class="field">
+            <label>Confirmar contraseña</label>
+            <input type="password" name="password_confirmation" placeholder="Repite la contraseña">
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal__footer">
+        <button type="button" class="btn btn-ghost" data-close-modal>Cancelar</button>
+        <button type="submit" class="btn btn-primary">Crear usuario</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<!-- ========== MODAL: CARGAR UPBOLIS ========== -->
+<div class="modal" id="modal-topup">
+  <div class="modal__backdrop"></div>
+  <div class="modal__dialog">
+    <header class="modal__header">
+      <h3 class="modal__title">Cargar UPBolis a usuario</h3>
+      <button type="button" class="modal__close" data-close-modal>&times;</button>
+    </header>
+
+    <form method="post" action="{% url 'admin_topup_tokens' %}">
+      {% csrf_token %}
+      <div class="modal__body">
+        <div class="form-grid">
+          <div class="field field--full">
+            <label>Usuario</label>
+            <select name="user_id" id="topup-user-select" class="select-small" required>
+              <option value="">Selecciona un usuario…</option>
+              {% for user in users %}
+                <option value="{{ user.id }}">{{ user.name }} – {{ user.email }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label>Monto (UPBolis)</label>
+            <input type="number" name="amount" min="1" step="1" required>
+          </div>
+          <div class="field field--full">
+            <label>Motivo / nota interna</label>
+            <input type="text" name="reason" placeholder="Promoción, recompensa, corrección de saldo, etc.">
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal__footer">
+        <button type="button" class="btn btn-ghost" data-close-modal>Cancelar</button>
+        <button type="submit" class="btn btn-accent">Cargar UPBolis</button>
+      </footer>
+    </form>
+  </div>
+</div>
+
+<!-- ========== MODAL: GESTIONAR USUARIO (ROL + SALDO) ========== -->
+<div class="modal" id="modal-manage-user">
+  <div class="modal__backdrop"></div>
+  <div class="modal__dialog">
+    <header class="modal__header">
+      <div>
+        <h3 class="modal__title">Gestionar usuario</h3>
+        <p class="modal__subtitle" id="manage-user-subtitle"></p>
+      </div>
+      <button type="button" class="modal__close" data-close-modal>&times;</button>
+    </header>
+
+    <form method="post" id="manage-user-form">
+      {% csrf_token %}
+      <div class="modal__body">
+        <div class="form-grid">
+          <div class="field">
+            <label>Rol</label>
+            <select name="role" id="manage-user-role" class="select-small" required>
+              <option value="buyer">Comprador</option>
+              <option value="seller">Vendedor</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Monto de ajuste (UPBolis)</label>
+            <input type="number" name="amount" min="0" step="0.01" value="0">
+          </div>
+
+          <div class="field field--full">
+            <label>Operación sobre el saldo</label>
+            <div class="radio-row">
+              <label class="radio-inline"><input type="radio" name="operation" value="deposit" checked> Añadir saldo</label>
+              <label class="radio-inline"><input type="radio" name="operation" value="withdraw"> Restar saldo</label>
+            </div>
+            <p class="field__hint">Deja el monto en 0 si solo quieres cambiar el rol.</p>
+          </div>
+
+          <div class="field field--full">
+            <label>Motivo / nota interna</label>
+            <input type="text" name="reason" placeholder="Ajuste manual desde panel de administrador.">
+          </div>
+        </div>
+      </div>
+
+      <footer class="modal__footer">
+        <button type="button" class="btn btn-ghost" data-close-modal>Cancelar</button>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </footer>
+    </form>
+  </div>
+</div>
 
 <script>
-    const adminToken = localStorage.getItem('api_token');
-    const API_BASE = "http://api.gaelarianafernandomiguel.nicolascresposu.com/api";
+  const manageUrlTemplate = "{% url 'admin_manage_user' user_id=0 %}";
+</script>
 
-    document.querySelectorAll('.promote-user').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const userId = btn.getAttribute('data-user-id');
-            if (!confirm('Convertir este usuario en vendedor?')) return;
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const modals = document.querySelectorAll('.modal');
+  const manageForm = document.getElementById('manage-user-form');
+  const manageSubtitle = document.getElementById('manage-user-subtitle');
+  const manageRoleSelect = document.getElementById('manage-user-role');
 
-            try {
-                const response = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'Authorization': `Bearer ${adminToken}`,
-                    },
-                    body: JSON.stringify({ role: 'seller' }),
-                });
+  document.querySelectorAll('[data-open-modal]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-open-modal');
+      const modal = document.getElementById(id);
+      if (!modal) return;
 
-                if (response.ok) {
-                    const json = await response.json();
-                    const li = document.getElementById(`user-${userId}`);
-                    if (li) {
-                        const roleSpan = li.querySelector('.user-role');
-                        if (roleSpan) roleSpan.textContent = 'seller';
-                        const btnEl = li.querySelector('.promote-user');
-                        if (btnEl) btnEl.remove();
-                    }
-                    alert('Usuario promovido a vendedor');
-                } else {
-                    let err = 'Error al promover usuario';
-                    try { const json = await response.json(); if (json?.message) err = json.message; } catch (_) { try { const text = await response.text(); if (text) err = text; } catch (_) {} }
-                    alert(err);
-                }
-            } catch (err) {
-                alert(`Error: ${err.message}`);
-            }
-        });
+      if (id === 'modal-topup' && btn.dataset.userId) {
+        const select = modal.querySelector('#topup-user-select');
+        if (select) select.value = btn.dataset.userId;
+      }
+
+      if (id === 'modal-manage-user') {
+        const userId = btn.dataset.userId;
+        const name = btn.dataset.userName || '';
+        const email = btn.dataset.userEmail || '';
+        const role = (btn.dataset.userRole || 'buyer').toLowerCase();
+
+        if (manageForm) manageForm.action = manageUrlTemplate.replace("/0/", `/${userId}/`);
+        if (manageSubtitle) manageSubtitle.textContent = `${name} · ${email}`;
+        if (manageRoleSelect) manageRoleSelect.value = role;
+      }
+
+      modal.classList.add('is-open');
     });
+  });
 
-    // Demote seller to buyer
-    document.querySelectorAll('.demote-user').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const userId = btn.getAttribute('data-user-id');
-            if (!confirm('Quitar rol de vendedor a este usuario?')) return;
-
-            try {
-                const response = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'Authorization': `Bearer ${adminToken}`,
-                    },
-                    body: JSON.stringify({ role: 'buyer' }),
-                });
-
-                if (response.ok) {
-                    const json = await response.json();
-                    const li = document.getElementById(`user-${userId}`);
-                    if (li) {
-                        const roleSpan = li.querySelector('.user-role');
-                        if (roleSpan) roleSpan.textContent = 'buyer';
-                        // remove demote button and add promote button back
-                        const demBtn = li.querySelector('.demote-user');
-                        if (demBtn) demBtn.remove();
-                        const promoteBtn = document.createElement('button');
-                        promoteBtn.className = 'btn btn-primary promote-user';
-                        promoteBtn.setAttribute('data-user-id', userId);
-                        promoteBtn.style.marginLeft = '10px';
-                        promoteBtn.textContent = 'Hacer Vendedor';
-                        li.appendChild(promoteBtn);
-                        // attach handler to new promote button
-                        promoteBtn.addEventListener('click', async (ev) => {
-                            if (!confirm('Convertir este usuario en vendedor?')) return;
-                            try {
-                                const resp = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
-                                    method: 'PATCH',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'Accept': 'application/json',
-                                        'Authorization': `Bearer ${adminToken}`,
-                                    },
-                                    body: JSON.stringify({ role: 'seller' }),
-                                });
-                                if (resp.ok) {
-                                    const j = await resp.json();
-                                    if (roleSpan) roleSpan.textContent = 'seller';
-                                    promoteBtn.remove();
-                                    alert('Usuario promovido a vendedor');
-                                } else {
-                                    let err = 'Error al promover usuario';
-                                    try { const j = await resp.json(); if (j?.message) err = j.message; } catch (_) { try { const t = await resp.text(); if (t) err = t; } catch (_) {} }
-                                    alert(err);
-                                }
-                            } catch (err) {
-                                alert(`Error: ${err.message}`);
-                            }
-                        });
-                    }
-                    alert('Usuario degradado a comprador');
-                } else {
-                    let err = 'Error al degradar usuario';
-                    try { const json = await response.json(); if (json?.message) err = json.message; } catch (_) { try { const text = await response.text(); if (text) err = text; } catch (_) {} }
-                    alert(err);
-                }
-            } catch (err) {
-                alert(`Error: ${err.message}`);
-            }
-        });
+  document.querySelectorAll('[data-close-modal]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const modal = btn.closest('.modal');
+      if (modal) modal.classList.remove('is-open');
     });
+  });
+
+  modals.forEach(modal => {
+    modal.addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal__backdrop')) {
+        modal.classList.remove('is-open');
+      }
+    });
+  });
+
+  const userSearch = document.getElementById('user-search');
+  if (userSearch) {
+    userSearch.addEventListener('input', () => {
+      const term = userSearch.value.trim().toLowerCase();
+      document.querySelectorAll('[data-user-row]').forEach(row => {
+        const text = (row.dataset.searchText || '').toLowerCase();
+        row.style.display = !term || text.includes(term) ? '' : 'none';
+      });
+    });
+  }
+});
 </script>
 
 {% endblock %}
